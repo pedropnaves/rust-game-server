@@ -1,16 +1,21 @@
+use crate::network::message::message_impl::Message;
 use byte::BytesExt;
-use crate::network::message::message::Message;
 
 pub struct OutputMessage {
-    message: super::message::Message
+    message: super::message_impl::Message,
+}
+
+impl Default for OutputMessage {
+    fn default() -> Self {
+        Self {
+            message: Message::new(),
+        }
+    }
 }
 
 impl OutputMessage {
-
     pub fn new() -> Self {
-        Self {
-            message: Message::new()
-        }
+        OutputMessage::default()
     }
 
     pub fn write_message_size(&mut self) {
@@ -19,7 +24,7 @@ impl OutputMessage {
     }
 
     pub fn get_buffer(&self) -> &[u8] {
-        return &self.message.buffer[..];
+        &self.message.buffer[..]
     }
 
     #[warn(dead_code)]
@@ -36,7 +41,10 @@ impl OutputMessage {
         let mut offset = self.message.position;
         self.message.position += size;
         self.message.length += size;
-        self.message.buffer.write::<u16>(&mut offset, value).unwrap();
+        self.message
+            .buffer
+            .write::<u16>(&mut offset, value)
+            .unwrap();
     }
 
     pub fn add_u32(&mut self, value: u32) {
@@ -44,7 +52,10 @@ impl OutputMessage {
         let mut offset = self.message.position;
         self.message.position += size;
         self.message.length += size;
-        self.message.buffer.write::<u32>(&mut offset, value).unwrap();
+        self.message
+            .buffer
+            .write::<u32>(&mut offset, value)
+            .unwrap();
     }
 
     #[warn(dead_code)]
@@ -53,7 +64,10 @@ impl OutputMessage {
         let mut offset = self.message.position;
         self.message.position += size;
         self.message.length += size;
-        self.message.buffer.write::<u64>(&mut offset, value).unwrap();
+        self.message
+            .buffer
+            .write::<u64>(&mut offset, value)
+            .unwrap();
     }
 
     #[warn(dead_code)]
@@ -63,6 +77,9 @@ impl OutputMessage {
         let mut offset = self.message.position;
         self.message.position += string_len;
         self.message.length += string_len;
-        self.message.buffer.write::<&str>(&mut offset, value).unwrap();
+        self.message
+            .buffer
+            .write::<&str>(&mut offset, value)
+            .unwrap();
     }
 }

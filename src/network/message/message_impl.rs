@@ -1,7 +1,7 @@
 pub struct Message {
     pub length: usize,
     pub position: usize,
-    pub buffer: Vec<u8>
+    pub buffer: Vec<u8>,
 }
 
 impl Message {
@@ -11,15 +11,13 @@ impl Message {
 
     pub fn from(buffer: Vec<u8>, length: usize) -> Self {
         Self {
-            length: length,
+            length,
             position: Message::INITIAL_BUFFER_POSITION,
-            buffer: buffer
+            buffer,
         }
     }
 
     pub fn new() -> Self {
-        let buffer: Vec<u8> = vec![0; Message::MAX_BODY_LENGTH];
-        let length = 0;
-        return Message::from(buffer, length);
+        Message::from(vec![0; Message::MAX_BODY_LENGTH], 0)
     }
 }

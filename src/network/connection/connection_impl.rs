@@ -1,9 +1,9 @@
-use std::net::TcpStream;
-use std::io::BufReader;
 use super::connection_manager::ConnectionManager;
 use crate::network::message::input_message::InputMessage;
 use crate::network::message::output_message::OutputMessage;
-use crate::protocol::protocol::Protocol;
+use crate::protocol::protocol_impl::Protocol;
+use std::io::BufReader;
+use std::net::TcpStream;
 
 pub trait MessageSender {
     fn send_message(&self, output_message: &mut OutputMessage);
@@ -13,21 +13,20 @@ pub trait MessageSender {
 pub struct Connection {
     id: u32,
     stream: Box<TcpStream>,
-    connection_manager: ConnectionManager
+    connection_manager: ConnectionManager,
 }
 
 impl Connection {
     pub fn new(id: u32, stream: Box<TcpStream>, connection_manager: ConnectionManager) -> Self {
-        
         Self {
-            id: id,
-            stream: stream,
-            connection_manager: connection_manager
+            id,
+            stream,
+            connection_manager,
         }
     }
 
-    pub fn listen_to_messages<'a>(&'a mut self) {
-        let mut input_message =  InputMessage::new();
+    pub fn listen_to_messages(&mut self) {
+        let mut input_message = InputMessage::new();
         let stream_clone = self.stream.try_clone().unwrap();
         let connection_manager = self.connection_manager.clone();
         let connection_id = self.id;
@@ -35,7 +34,7 @@ impl Connection {
         let mut reader = BufReader::new(stream_clone);
         loop {
             input_message.read(&mut reader);
-            
+
             if input_message.length() > 0 {
                 protocol.handle_message(&mut input_message);
                 input_message.reset();
@@ -50,10 +49,12 @@ impl Connection {
 
 impl MessageSender for &mut Connection {
     fn send_message(&self, output_message: &mut OutputMessage) {
-        self.connection_manager.send_message(&self.stream, output_message);
+        self.connection_manager
+            .send_message(&self.stream, output_message);
     }
 
     fn send_message_to_everyone(&self, output_message: &mut OutputMessage) {
-        self.connection_manager.send_for_everyone_except(self.id, output_message);
+        self.connection_manager
+            .send_for_everyone_except(self.id, output_message);
     }
 }

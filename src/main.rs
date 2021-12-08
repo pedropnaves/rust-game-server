@@ -1,7 +1,4 @@
-mod network;
-mod protocol;
-mod game;
-use crate::network::connection::connection_manager::ConnectionManager;
+use game_server::ConnectionManager;
 
 fn main() {
     ConnectionManager::new().start();
