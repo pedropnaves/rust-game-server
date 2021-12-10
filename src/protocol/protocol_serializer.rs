@@ -1,7 +1,7 @@
-use crate::network::message::output_message::OutputMessage;
+use super::protocol_utils::direction_id;
 use crate::game::player::Player;
 use crate::game::position::Direction;
-use super::protocol_utils::direction_id;
+use crate::network::message::output_message::OutputMessage;
 
 mod message_id {
     pub const LOGIN: u16 = 0x00;
@@ -13,44 +13,46 @@ mod message_id {
 pub struct ProtocolSerializer;
 
 impl ProtocolSerializer {
-
     pub fn new() -> Self {
         Self {}
     }
 
-    pub fn create_login(&self, connected_player: &Player, players: Vec<Box<Player>>) -> OutputMessage {
+    pub fn create_login(&self, connected_player: &Player, players: Vec<Player>) -> OutputMessage {
         let mut output_message = OutputMessage::new();
         output_message.add_u16(message_id::LOGIN);
-        self.add_player(&connected_player, &mut output_message);
+        self.add_player(connected_player, &mut output_message);
         let players_size = players.len() - 1;
         output_message.add_u16(players_size as u16);
+
         for player in players {
             if player.id != connected_player.id {
-                self.add_player(player.as_ref(), &mut output_message);
+                self.add_player(&player, &mut output_message);
             }
         }
-        return output_message;
+        output_message
     }
 
     pub fn create_notify_player_connected(&self, player: &Player) -> OutputMessage {
         let mut output_message = OutputMessage::new();
         output_message.add_u16(message_id::PLAYER_CONNECTED);
-        self.add_player(&player, &mut output_message);
-        return output_message;
+        self.add_player(player, &mut output_message);
+        output_message
     }
 
     pub fn create_notify_player_disconnected(&self, player: &Player) -> OutputMessage {
         let mut output_message = OutputMessage::new();
         output_message.add_u16(message_id::PLAYER_DISCONNECTED);
         output_message.add_u32(player.id);
-        return output_message;
+        output_message
     }
 
     pub fn create_player_walk(&self, player: &Player) -> OutputMessage {
         let mut output_message = OutputMessage::new();
         output_message.add_u16(message_id::PLAYER_WALK);
-        self.add_player(&player, &mut output_message);
-        return output_message;
+
+        self.add_player(player, &mut output_message);
+
+        output_message
     }
 
     fn add_player(&self, player: &Player, output_message: &mut OutputMessage) {
@@ -67,7 +69,7 @@ impl ProtocolSerializer {
             Direction::Up => output_message.add_byte(direction_id::UP),
             Direction::Down => output_message.add_byte(direction_id::DOWN),
             Direction::Left => output_message.add_byte(direction_id::LEFT),
-            Direction::Right => output_message.add_byte(direction_id::RIGHT)
+            Direction::Right => output_message.add_byte(direction_id::RIGHT),
         }
     }
 }

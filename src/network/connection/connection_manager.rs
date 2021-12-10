@@ -1,28 +1,33 @@
-use std::sync::Mutex;
-use std::sync::Arc;
-use std::sync::RwLock;
-use std::net::TcpListener;
-use std::net::TcpStream;
+use super::connection_impl::Connection;
+use crate::network::message::output_message::OutputMessage;
+use std::collections::HashMap;
 use std::io::BufWriter;
 use std::io::Write;
-use std::collections::HashMap;
-use crate::network::message::output_message::OutputMessage;
+use std::net::TcpListener;
+use std::net::TcpStream;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
 use threadpool::ThreadPool;
-use super::connection::Connection;
 
 #[derive(Clone)]
 pub struct ConnectionManager {
     connections_count: Arc<Mutex<u32>>,
-    streams: Arc<RwLock<HashMap<u32, TcpStream>>>
+    streams: Arc<RwLock<HashMap<u32, TcpStream>>>,
+}
+
+impl Default for ConnectionManager {
+    fn default() -> Self {
+        Self {
+            connections_count: Arc::new(Mutex::new(0)),
+            streams: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
 }
 
 impl ConnectionManager {
-
     pub fn new() -> Self {
-        Self {
-            connections_count: Arc::new(Mutex::new(0)),
-            streams: Arc::new(RwLock::new(HashMap::new()))
-        }
+        ConnectionManager::default()
     }
 
     pub fn start(self) {
@@ -32,13 +37,17 @@ impl ConnectionManager {
             let stream = stream_result.unwrap();
             let mut connections_count = self.connections_count.lock().unwrap();
             let mut connection = Connection::new(
-                connections_count.clone(), 
-                Box::new(stream.try_clone().unwrap()), 
-                self.clone()
+                *connections_count,
+                Box::new(stream.try_clone().unwrap()),
+                self.clone(),
             );
-            self.streams.write().unwrap().entry(*connections_count).or_insert(stream);
+            self.streams
+                .write()
+                .unwrap()
+                .entry(*connections_count)
+                .or_insert(stream);
             *connections_count += 1;
-            connection_pool.execute( move || {
+            connection_pool.execute(move || {
                 connection.listen_to_messages();
             });
         }
@@ -64,7 +73,7 @@ impl ConnectionManager {
         let mut writer = BufWriter::new(stream);
         output_message.write_message_size();
         let buffer = output_message.get_buffer();
-        writer.write(buffer).unwrap();
+        writer.write_all(buffer).unwrap();
         writer.flush().unwrap();
     }
 }
